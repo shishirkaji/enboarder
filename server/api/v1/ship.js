@@ -45,7 +45,10 @@ router.get("/count", async (req, res) => {
     let sql = `SELECT * FROM ship ;`
     let total = await dbPool.query(sql);
     total = total.length
-    if (total) return res.json({ total })
+    if (total < 1) {
+        console.log("please reload the page")
+    }
+    return res.json({ total })
 })
 router.get('/', pagination, async (req, res) => {
     console.log(req.offset)

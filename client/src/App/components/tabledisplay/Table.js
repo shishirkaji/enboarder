@@ -27,6 +27,7 @@ const Table = ({ searchResult }) => {
         console.log("makind api call from table")
         const makeApiCall = async () => {
             let total = await axios.get('http://localhost:4000/api/v1/ship/count')
+            if(total === 0) window.location.reload(false)
             let ships = await axios.get('http://localhost:4000/api/v1/ship')
             if (ships) {
                 console.log(ships.data.rows)
