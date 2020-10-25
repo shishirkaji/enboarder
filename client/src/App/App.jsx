@@ -19,7 +19,7 @@ const handleSearch =(data)=>{
       <Application>
         <Header />
         <Controller handleSearch={handleSearch} />
-        <Table search={search} />
+        <Table searchResult={search.searchResult} />
       </Application>
       <GlobalStyle />
     </>

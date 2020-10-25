@@ -3,26 +3,55 @@ const router = express.Router();
 const { check, validationResult } = require('express-validator');
 const dbPool = require('./../../db');
 const axios = require('axios')
+const pagination = require('./middleware/pagination')
 router.get('/search', async (req, res) => {
-    console.log("search reached")
     console.log(req.query)
     let { type, homeport, weight } = req.query;
-    if(!type && !weight && !homeport) return res.status(400).json({msg: "no query params"})
+    // server side validaton for input data. 
+    // I would use express-validator to check validtion of data and then send errors as array. However, it does not imply in such case. I have 
+    //put some validation to check if there are atleast one query params provided.
+    if (!type && !weight && !homeport) return res.status(400).json({ msg: "no query params" })
+    let errors = new Array
     let dbquerrystatement = `WHERE`
-    if (type) dbquerrystatement = dbquerrystatement + ` type = "${type}" `;
+    if (type) {
+        console.log(typeof type)
+        if (typeof type !== "string") errors.push({ param: "type", msg: "The type must be string value" })
+        dbquerrystatement = dbquerrystatement + ` type = "${type}" `;
+    }
     if (homeport && type) dbquerrystatement = dbquerrystatement + `AND`;
-    if (homeport) dbquerrystatement = dbquerrystatement + ` homeport = "${homeport}" `;
+    if (homeport) {
+        if (typeof homeport !== "string") errors.push({ param: "homeport", msg: "The homeport must be string value" })
+        dbquerrystatement = dbquerrystatement + ` homeport = "${homeport}" `
+    };
     if (homeport || type) { if (weight) { dbquerrystatement = dbquerrystatement + `AND` } };
-    if (weight) dbquerrystatement = dbquerrystatement + ` weight = ${weight}`;
+    if (weight) {
+        function isNumeric(str) {
+            if (typeof str != "string") return false // This only process strings!  
+            return !isNaN(str) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
+                !isNaN(parseFloat(str)) // ...and ensure strings of whitespace fail
+        }
+        console.log(typeof weight)
+        if (!isNumeric(weight)) errors.push({ param: "weight", msg: "The weight must be Number " })
+        dbquerrystatement = dbquerrystatement + ` weight = ${weight}`
+    };
+    if (errors.length > 0) return res.status(400).json({ errors })
     console.log(dbquerrystatement)
     let sql = `SELECT * FROM ship ${type || homeport || weight ? dbquerrystatement : ";"}`
     console.log(sql)
     let rows = await dbPool.query(sql);
     return res.json({ ships: rows })
 })
-router.get('/', async (req, res) => {
+router.get("/count", async (req, res) => {
     let sql = `SELECT * FROM ship ;`
+    let total = await dbPool.query(sql);
+    total = total.length
+    if (total) return res.json({ total })
+})
+router.get('/', pagination, async (req, res) => {
+    console.log(req.offset)
+    let sql = `SELECT * FROM ship LIMIT ${req.offset},5;`
     let rows = await dbPool.query(sql);
+
     if (rows.length < 1) {
         var config = {
             method: 'get',

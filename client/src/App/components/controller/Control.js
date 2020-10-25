@@ -13,12 +13,12 @@ const useStyles = makeStyles((theme) => ({
     textAlign: "center",
   },
 }));
-const Control = ({handleSearch}) => {
+const Control = ({ handleSearch }) => {
   const classes = useStyles();
   const [state, setState] = useState({
     type: "None",
-    homeport: null,
-    weight: null,
+    homeport: "",
+    weight: 0,
     search: false
   });
   const handleChange = (event, name) => {
@@ -29,23 +29,26 @@ const Control = ({handleSearch}) => {
   useEffect(() => {
     let { type, weight, homeport } = state
     // make api call
-    console.log("state" )
-    console.log(state )
+    console.log("state")
+    console.log(state)
     const apiCall = async () => {
       let data = new Object;
       if (type !== "None") {
         data = { ...data, type: type }
       }
-      if (weight !== null && weight !== "") {
+      if (weight !== null && weight !== ""  && weight !== 0) {
 
         data = { ...data, weight: weight }
       }
       if (homeport !== null && homeport !== '') {
         data = { ...data, homeport: " " + homeport }
       }
-      console.log("params")
+      if (type === "None" && (weight === null || weight === '') && (homeport === null || homeport === '')) {
+        console.log("not making any api call")
+        return null
+      }
+      console.log("calling search api")
       console.log(data)
-      console.log("calling api")
       axios.defaults.headers.post["Content-Type"] = "application/json";
       let response = await axios({
         method: "get",
@@ -53,15 +56,23 @@ const Control = ({handleSearch}) => {
         params: data
       })
       if (response) handleSearch(response.data)
-
     }
-
     if (state.search) {
       console.log("here")
       apiCall()
     }
 
   }, [state])
+  const handleClearSearch = () => {
+    // clear search fields 
+    setState({
+      type: "None",
+      homeport: "",
+      weight: 0,
+      search: false
+    })
+    handleSearch(null)
+  }
   return (
     <div className={classes.root}>
       <Grid container spacing={3}>
@@ -88,6 +99,7 @@ const Control = ({handleSearch}) => {
             id="standard-number"
             style={{ color: "white" }}
             type="number"
+            value ={state.weight}
             InputLabelProps={{
               shrink: true,
             }}
@@ -100,6 +112,7 @@ const Control = ({handleSearch}) => {
         <Grid item xs={12} sm={4}>
           <label>Home port</label>{" "}
           <TextField
+          value ={state.homeport}
             onChange={(e) => {
               handleChange(e, "homeport")
             }}
@@ -115,8 +128,8 @@ const Control = ({handleSearch}) => {
           </Button>
         </Grid>
         <Grid item xs={6}>
-          <Button variant="contained" color="secondary">
-            Load all
+          <Button variant="contained" color="secondary" onClick={(e) => { handleClearSearch() }}>
+            Clear Search
           </Button>
         </Grid>
       </Grid>
