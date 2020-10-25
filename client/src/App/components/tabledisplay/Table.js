@@ -63,29 +63,41 @@ const Table = ({ searchResult }) => {
         } else return showSearchResults()
 
     }
-    const showIcon = () => {
-        return "icon"
+    const showIcon = (icon) => {
+        return <div style={{ alignContent: "center" }}><img style={{ width: "30px" }} src={`http://localhost:4000/${icon}`} ></img></div>
     }
-    const showUpoad = () => {
+    const showUpoad = (id) => {
         return (<div>
             <input type="file" name="file" onChange={(e) => { imageUploadHandler(e) }} />
-            <Button startIcon={<PublishIcon />} onClick={(e) => { uploadImage() }} variant="contained" color='secondary' >upload</Button>
+            <Button startIcon={<PublishIcon />} onClick={(e) => { uploadImage(id) }} variant="contained" color='secondary' >upload</Button>
         </div>)
     }
     const imageUploadHandler = event => {
         console.log(event.target.files[0])
         setState({ ...state, image: event.target.files[0] })
     }
-    const uploadImage = () => {
+    const uploadImage = (id) => {
         console.log("uploading images")
-        const data = new FormData()
-        data.append('file', state.image)
-        console.log(data)
-        axios.post("http://localhost:4000/api/v1/upload", data, {
-            // receive two    parameter endpoint url ,form data
-        }).then(res => { // then print response status
-            console.log(res.statusText)
-        }).catch((err) => { console.log(err) })
+        // validation
+        // 1 file type image/jpeg
+        if(state.image === null || state.image === undefined ) return alert("please choose image")
+        if (state.image.type === 'image/jpeg' || state.image.type === 'image/png' || state.image.type === 'image/jpg') {
+            console.log("invalid")
+            // size validation
+            if (state.image.size > 100000) {
+                alert("File size cannot be greater than 100kb")
+                return null
+            }
+            const data = new FormData()
+            data.append('file', state.image)
+            console.log(data)
+            axios.post(`http://localhost:4000/api/v1/upload?id=${id}`, data, {
+                // receive two    parameter endpoint url ,form data
+            }).then(res => { // then print response status
+                console.log(res.statusText)
+            }).catch((err) => { console.log(err) })
+        } else alert("invalid file type. Accpets png, jpeg and jpg")
+
     }
 
     const showSearchResults = () => {
@@ -100,7 +112,8 @@ const Table = ({ searchResult }) => {
                     <td>{ship.homeport}</td>
                     <td>{ship.name}</td>
                     <td>{ship.class}</td>
-                    <td>Icon</td>
+                    <td>{ship.icon === null ? showUpoad(ship.id) : showIcon(ship.icon)}</td>
+                    {/* <td>Icon</td> */}
                 </tr>)
         })
 
